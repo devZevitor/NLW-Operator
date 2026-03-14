@@ -1,45 +1,54 @@
 "use client";
 
+import hljs from "highlight.js";
 import * as React from "react";
+import Editor from "react-simple-code-editor";
+import "highlight.js/styles/atom-one-dark.css";
 import { cn } from "@/lib/utils";
 
 interface CodeEditorProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   value: string;
   onChange: (value: string) => void;
+  language?: string;
   placeholder?: string;
+  headerRight?: React.ReactNode;
 }
 
 export function CodeEditor({
   className,
   value,
   onChange,
+  language = "plaintext",
   placeholder,
+  headerRight,
   ...props
 }: CodeEditorProps) {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [lineCount, setLineCount] = React.useState(1);
   const lineNumbersRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-resize logic
   React.useEffect(() => {
-    if (textareaRef.current) {
-      // Reset height to auto to get the correct scrollHeight for shrinking
-      textareaRef.current.style.height = "auto";
-      // Set height to scrollHeight to expand
-      const scrollHeight = textareaRef.current.scrollHeight;
-      // Minimum height: 16 lines * 1.5rem (24px) + padding (32px) approx 416px, or use min-h class
-      // We'll let min-h handle the minimum and this handle the growth
-      textareaRef.current.style.height = `${scrollHeight}px`;
-    }
+    setLineCount(value.split("\n").length);
   }, [value]);
 
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+  const highlight = React.useCallback(
+    (code: string) => {
+      if (language && hljs.getLanguage(language)) {
+        return hljs.highlight(code, { language }).value;
+      }
+      return hljs.highlightAuto(code).value;
+    },
+    [language],
+  );
+
+  const handleScroll = (
+    e: React.UIEvent<HTMLTextAreaElement> | React.UIEvent<HTMLDivElement>,
+  ) => {
     if (lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop;
+      lineNumbersRef.current.scrollTop = (e.target as HTMLElement).scrollTop;
     }
   };
 
-  const lineCount = value.split("\n").length;
   // Ensure we always render enough line numbers to match content + min 16 lines
   const minLines = 16;
   const displayLines = Math.max(lineCount, minLines);
@@ -49,15 +58,18 @@ export function CodeEditor({
     <div
       className={cn(
         "flex flex-col overflow-hidden rounded-xl border border-[#2A2A2A] bg-[#111111] shadow-2xl",
-        className
+        className,
       )}
       {...props}
     >
       {/* Window Header */}
-      <div className="flex items-center gap-2 border-b border-[#2A2A2A] bg-[#111111] px-4 py-3">
-        <div className="h-3 w-3 rounded-full bg-red-500" />
-        <div className="h-3 w-3 rounded-full bg-amber-500" />
-        <div className="h-3 w-3 rounded-full bg-emerald-500" />
+      <div className="flex items-center justify-between border-b border-[#2A2A2A] bg-[#111111] px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full bg-red-500" />
+          <div className="h-3 w-3 rounded-full bg-amber-500" />
+          <div className="h-3 w-3 rounded-full bg-emerald-500" />
+        </div>
+        {headerRight && <div className="flex items-center">{headerRight}</div>}
       </div>
 
       {/* Editor Body */}
@@ -78,17 +90,25 @@ export function CodeEditor({
         {/* Vertical Divider */}
         <div className="hidden w-[1px] bg-[#2A2A2A] md:block" />
 
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onScroll={handleScroll}
-          // min-h-[25rem] corresponds to roughly 16 lines (16 * 1.5rem = 24rem) + padding
-          className="min-h-[26rem] flex-1 resize-none overflow-hidden bg-[#0F0F0F] p-4 font-mono text-sm leading-6 text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
-          placeholder={placeholder || "// Paste your code here..."}
-          spellCheck={false}
-        />
+        {/* Editor */}
+        <div className="flex-1 overflow-hidden bg-[#0F0F0F] relative">
+          <Editor
+            value={value}
+            onValueChange={onChange}
+            highlight={highlight}
+            padding={16}
+            onScroll={handleScroll}
+            className="font-mono text-sm leading-6 min-h-[26rem]"
+            textareaClassName="focus:outline-none"
+            style={{
+              fontFamily: '"Geist Mono", monospace',
+              fontSize: 14,
+              backgroundColor: "#0F0F0F",
+              color: "#e4e4e7", // text-zinc-200
+            }}
+            placeholder={placeholder || "// Paste your code here..."}
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
+import * as React from "react";
+import { SmartEditor } from "@/components/features/smart-editor";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { CodeEditor } from "@/components/ui/code-editor";
 import {
   Table,
   TableBody,
@@ -16,9 +16,24 @@ import {
 
 // Static data for leaderboard preview
 const leaderboardData = [
-  { rank: "#1", score: 2.1, code: "function calculateTotal(items) { var total = 0; ...", lang: "javascript" },
-  { rank: "#2", score: 6.4, code: "def process_data(data): return [x for x in ...", lang: "python" },
-  { rank: "#3", score: 9.2, code: 'pub fn main() { println!("Hello, world!"); }', lang: "rust" },
+  {
+    rank: "#1",
+    score: 2.1,
+    code: "function calculateTotal(items) { var total = 0; ...",
+    lang: "javascript",
+  },
+  {
+    rank: "#2",
+    score: 6.4,
+    code: "def process_data(data): return [x for x in ...",
+    lang: "python",
+  },
+  {
+    rank: "#3",
+    score: 9.2,
+    code: 'pub fn main() { println!("Hello, world!"); }',
+    lang: "rust",
+  },
 ];
 
 export default function Home() {
@@ -33,14 +48,16 @@ export default function Home() {
           <span>paste your code. get roasted.</span>
         </h1>
         <p className="max-w-2xl text-lg font-mono text-zinc-400">
-          // drop your code below and we'll rate it — brutally honest or full roast
-          mode
+          {
+            "// drop your code below and we'll rate it — brutally honest or full roast mode"
+          }
         </p>
       </section>
 
       {/* Code Editor Input */}
+
       <section className="w-full max-w-4xl space-y-6">
-        <CodeEditor
+        <SmartEditor
           placeholder="// Paste your code here..."
           value={code}
           onChange={setCode}
@@ -59,10 +76,10 @@ export default function Home() {
               </label>
             </div>
             <span className="hidden font-mono text-xs text-zinc-500 sm:inline-block">
-              // maximum sarcasm enabled
+              {"// maximum sarcasm enabled"}
             </span>
           </div>
-          
+
           <Button
             className="h-11 bg-emerald-500 px-8 font-mono font-bold text-black hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={code.trim().length === 0}
@@ -76,8 +93,12 @@ export default function Home() {
       <section className="w-full max-w-5xl space-y-8 pt-16">
         <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-4">
           <div className="flex items-center gap-3">
-            <span className="font-mono text-emerald-500 text-xl font-bold">//</span>
-            <h2 className="font-mono text-xl font-bold text-zinc-50">shame_leaderboard</h2>
+            <span className="font-mono text-emerald-500 text-xl font-bold">
+              {"//"}
+            </span>
+            <h2 className="font-mono text-xl font-bold text-zinc-50">
+              shame_leaderboard
+            </h2>
           </div>
           <Link
             href="/leaderboard"
@@ -86,28 +107,47 @@ export default function Home() {
             $ view_all &gt;&gt;
           </Link>
         </div>
-        
+
         <p className="font-mono text-sm text-zinc-500">
-          // the worst code on the internet, ranked by shame
+          {"// the worst code on the internet, ranked by shame"}
         </p>
 
         <div className="overflow-hidden rounded-lg border border-[#2A2A2A] bg-[#0A0A0A]">
           <Table>
             <TableHeader className="bg-[#111111]">
               <TableRow className="border-b border-[#2A2A2A] hover:bg-[#111111]">
-                <TableHead className="w-[80px] text-zinc-500 font-mono">Rank</TableHead>
-                <TableHead className="w-[100px] text-zinc-500 font-mono">Score</TableHead>
-                <TableHead className="text-zinc-500 font-mono">Preview</TableHead>
-                <TableHead className="text-right text-zinc-500 font-mono">Language</TableHead>
+                <TableHead className="w-[80px] text-zinc-500 font-mono">
+                  Rank
+                </TableHead>
+                <TableHead className="w-[100px] text-zinc-500 font-mono">
+                  Score
+                </TableHead>
+                <TableHead className="text-zinc-500 font-mono">
+                  Preview
+                </TableHead>
+                <TableHead className="text-right text-zinc-500 font-mono">
+                  Language
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {leaderboardData.map((item) => (
-                <TableRow key={item.rank} className="border-b border-[#2A2A2A] hover:bg-[#111111]">
-                  <TableCell className="font-mono font-medium text-zinc-300">{item.rank}</TableCell>
-                  <TableCell className={`font-mono font-bold ${
-                    item.score < 5 ? "text-red-500" : item.score < 8 ? "text-amber-500" : "text-emerald-500"
-                  }`}>
+                <TableRow
+                  key={item.rank}
+                  className="border-b border-[#2A2A2A] hover:bg-[#111111]"
+                >
+                  <TableCell className="font-mono font-medium text-zinc-300">
+                    {item.rank}
+                  </TableCell>
+                  <TableCell
+                    className={`font-mono font-bold ${
+                      item.score < 5
+                        ? "text-red-500"
+                        : item.score < 8
+                          ? "text-amber-500"
+                          : "text-emerald-500"
+                    }`}
+                  >
                     {item.score}
                   </TableCell>
                   <TableCell className="font-mono text-xs text-zinc-500 truncate max-w-[200px] sm:max-w-[400px]">
@@ -120,9 +160,9 @@ export default function Home() {
               ))}
             </TableBody>
           </Table>
-          
+
           <div className="bg-[#111111] py-4 text-center border-t border-[#2A2A2A]">
-            <Link 
+            <Link
               href="/leaderboard"
               className="font-mono text-xs text-zinc-500 hover:text-emerald-500 transition-colors"
             >
