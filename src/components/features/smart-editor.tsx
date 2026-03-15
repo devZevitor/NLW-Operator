@@ -39,6 +39,7 @@ interface SmartEditorProps {
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
+  maxLength?: number;
 }
 
 export function SmartEditor({
@@ -46,6 +47,7 @@ export function SmartEditor({
   onChange,
   className,
   placeholder,
+  maxLength,
 }: SmartEditorProps) {
   const [language, setLanguage] = React.useState("auto");
   const [detectedLanguage, setDetectedLanguage] = React.useState("plaintext");
@@ -75,6 +77,7 @@ export function SmartEditor({
       language={currentLanguage}
       placeholder={placeholder}
       className={className}
+      maxLength={maxLength}
       headerRight={
         <div className="relative flex items-center gap-2">
           <div className="relative">

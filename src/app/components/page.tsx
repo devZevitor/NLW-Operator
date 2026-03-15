@@ -1,5 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, User } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,10 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { CodeBlock } from "@/components/ui/code-block";
 import { DiffLine } from "@/components/ui/diff";
 import { ScoreRing } from "@/components/ui/score-ring";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -21,8 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Link from "next/link";
-import { ArrowLeft, User, Check, X, AlertTriangle } from "lucide-react";
+import { CodeEditorDemo } from "./editor-demo";
 
 export default function ComponentsPage() {
   return (
@@ -156,9 +157,7 @@ export default function ComponentsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Notifications</CardTitle>
-                  <CardDescription>
-                    You have 3 unread messages.
-                  </CardDescription>
+                  <CardDescription>You have 3 unread messages.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center space-x-4 rounded-md border p-4">
@@ -231,8 +230,12 @@ export default function ComponentsPage() {
 
           <div className="grid gap-8 rounded-lg border p-6">
             <CodeBlock
-              fileName="example.ts"
               lang="typescript"
+              headerRight={
+                <span className="font-mono text-xs text-muted-foreground">
+                  example.ts
+                </span>
+              }
               code={`function calculateTotal(items: number[]) {
   return items.reduce((acc, curr) => acc + curr, 0);
 }
@@ -242,6 +245,22 @@ const total = calculateTotal(prices);
 
 console.log(\`Total: \${total}\`);`}
             />
+          </div>
+        </section>
+
+        {/* Code Editor */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Code Editor
+            </h2>
+            <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
+              ui/code-editor.tsx
+            </span>
+          </div>
+
+          <div className="grid gap-8 rounded-lg border p-6">
+            <CodeEditorDemo />
           </div>
         </section>
 

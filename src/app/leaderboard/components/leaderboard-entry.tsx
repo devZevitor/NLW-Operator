@@ -1,4 +1,4 @@
-import { codeToHtml } from "shiki";
+import { CodeBlock } from "@/components/ui/code-block";
 import { cn } from "@/lib/utils";
 
 interface LeaderboardEntryProps {
@@ -16,12 +16,6 @@ export async function LeaderboardEntry({
   language,
   lines,
 }: LeaderboardEntryProps) {
-  const html = await codeToHtml(code, {
-    lang: language,
-    theme: "vesper",
-    structure: "inline",
-  });
-
   // Calculate rank color
   const rankColor = rank === 1 ? "text-amber-500" : "text-zinc-500";
   const scoreColor = score < 3 ? "text-red-500" : "text-zinc-500";
@@ -60,11 +54,12 @@ export async function LeaderboardEntry({
         </div>
 
         {/* Code Content */}
-        <div className="flex-1 overflow-x-auto py-3.5 px-4">
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is trusted
-            dangerouslySetInnerHTML={{ __html: html }}
-            className="font-mono text-sm leading-relaxed whitespace-pre"
+        <div className="flex-1">
+          <CodeBlock
+            code={code}
+            lang={language}
+            window={false}
+            className="rounded-none border-none p-0"
           />
         </div>
       </div>
