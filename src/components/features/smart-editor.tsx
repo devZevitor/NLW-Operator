@@ -40,6 +40,7 @@ interface SmartEditorProps {
   className?: string;
   placeholder?: string;
   maxLength?: number;
+  onLanguageChange?: (language: string) => void;
 }
 
 export function SmartEditor({
@@ -48,6 +49,7 @@ export function SmartEditor({
   className,
   placeholder,
   maxLength,
+  onLanguageChange,
 }: SmartEditorProps) {
   const [language, setLanguage] = React.useState("auto");
   const [detectedLanguage, setDetectedLanguage] = React.useState("plaintext");
@@ -69,6 +71,10 @@ export function SmartEditor({
   }, [value, language]);
 
   const currentLanguage = language === "auto" ? detectedLanguage : language;
+
+  React.useEffect(() => {
+    onLanguageChange?.(currentLanguage);
+  }, [currentLanguage, onLanguageChange]);
 
   return (
     <CodeEditor
