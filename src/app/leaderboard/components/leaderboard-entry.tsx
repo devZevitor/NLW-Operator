@@ -16,14 +16,24 @@ export async function LeaderboardEntry({
   language,
   lines,
 }: LeaderboardEntryProps) {
-  // Calculate rank color
-  const rankColor = rank === 1 ? "text-amber-500" : "text-zinc-500";
-  const scoreColor = score < 3 ? "text-red-500" : "text-zinc-500";
+  const rankColor =
+    rank === 1
+      ? "text-amber-500"
+      : rank === 2
+        ? "text-zinc-300"
+        : rank === 3
+          ? "text-amber-700"
+          : "text-zinc-500";
+  const scoreColor =
+    score < 5
+      ? "text-red-500"
+      : score < 8
+        ? "text-amber-500"
+        : "text-emerald-500";
 
   return (
     <div className="w-full flex flex-col border border-[#2A2A2A] bg-[#0A0A0A]">
-      {/* Meta Row */}
-      <div className="flex h-12 items-center justify-between border-b border-[#2A2A2A] px-5 bg-[#0A0A0A]">
+      <div className="flex items-center justify-between border-b border-[#2A2A2A] bg-[#0A0A0A] px-4 py-3 shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 font-mono text-[13px]">
             <span className="text-zinc-600">#</span>
@@ -41,9 +51,7 @@ export async function LeaderboardEntry({
         </div>
       </div>
 
-      {/* Code Block */}
       <div className="flex min-h-[120px] w-full overflow-hidden bg-[#111111]">
-        {/* Line Numbers */}
         <div className="flex w-10 flex-col items-end gap-1.5 border-r border-[#2A2A2A] bg-[#0F0F0F] py-3.5 px-2.5 font-mono text-xs text-zinc-600 select-none">
           {Array.from({ length: lines }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: Line numbers are static
@@ -53,13 +61,12 @@ export async function LeaderboardEntry({
           ))}
         </div>
 
-        {/* Code Content */}
         <div className="flex-1">
           <CodeBlock
             code={code}
             lang={language}
             window={false}
-            className="rounded-none border-none p-0"
+            className="rounded-none border-none p-0 bg-transparent"
           />
         </div>
       </div>
