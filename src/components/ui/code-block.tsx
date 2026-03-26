@@ -7,6 +7,7 @@ interface CodeBlockProps {
   lang?: string;
   className?: string;
   headerRight?: React.ReactNode;
+  headerLeft?: React.ReactNode;
   /**
    * If true, wraps the code in a window-like container.
    * If false, renders only the code block with line numbers.
@@ -20,6 +21,7 @@ export async function CodeBlock({
   lang = "typescript",
   className,
   headerRight,
+  headerLeft,
   window = true,
 }: CodeBlockProps) {
   const html = await codeToHtml(code, {
@@ -47,7 +49,11 @@ export async function CodeBlock({
   }
 
   return (
-    <CodeContainer className={className} headerRight={headerRight}>
+    <CodeContainer
+      className={className}
+      headerRight={headerRight}
+      headerLeft={headerLeft}
+    >
       {content}
     </CodeContainer>
   );

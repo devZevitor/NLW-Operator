@@ -4,13 +4,14 @@ import { cn } from "@/lib/utils";
 export interface CodeContainerProps
   extends React.HTMLAttributes<HTMLDivElement> {
   headerRight?: React.ReactNode;
+  headerLeft?: React.ReactNode;
   footer?: React.ReactNode;
 }
 
 export const CodeContainer = React.forwardRef<
   HTMLDivElement,
   CodeContainerProps
->(({ className, children, headerRight, footer, ...props }, ref) => {
+>(({ className, children, headerRight, headerLeft, footer, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -23,9 +24,12 @@ export const CodeContainer = React.forwardRef<
       {/* Window Header */}
       <div className="flex items-center justify-between border-b border-[#2A2A2A] bg-[#111111] px-4 py-3 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-red-500" />
-          <div className="h-3 w-3 rounded-full bg-amber-500" />
-          <div className="h-3 w-3 rounded-full bg-emerald-500" />
+          {headerLeft && <div className="flex items-center">{headerLeft}</div>}
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-red-500" />
+            <div className="h-3 w-3 rounded-full bg-amber-500" />
+            <div className="h-3 w-3 rounded-full bg-emerald-500" />
+          </div>
         </div>
         {headerRight && <div className="flex items-center">{headerRight}</div>}
       </div>
