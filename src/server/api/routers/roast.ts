@@ -145,6 +145,7 @@ export const roastRouter = createTRPCRouter({
         code: improvedCode,
         language: roast.language,
         sarcasmMode: true,
+        originalScore,
       });
 
       const improved = analysis.shameScore > originalScore;

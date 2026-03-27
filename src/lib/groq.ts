@@ -25,6 +25,7 @@ export interface AnalyzeCodeInput {
   code: string;
   language: string;
   sarcasmMode: boolean;
+  originalScore?: number;
 }
 
 const RESPONSE_SCHEMA = z.object({
@@ -102,7 +103,7 @@ ${code}
 Responda APENAS com JSON válido, sem markdown.
 `;
 
-const _IMPROVE_PROMPT = (
+const IMPROVE_PROMPT = (
   code: string,
   language: string,
   originalScore: number,
@@ -132,15 +133,20 @@ Responda APENAS com JSON válido.
 export async function analyzeCode(
   input: AnalyzeCodeInput,
 ): Promise<GroqResponse> {
-  const { code, language, sarcasmMode } = input;
+  const { code, language, sarcasmMode, originalScore } = input;
 
   if (!process.env.GROQ_API_KEY) {
     throw new Error("GROQ_API_KEY not configured");
   }
 
-  const prompt = sarcasmMode
-    ? SARCASM_PROMPT(code, language)
-    : NORMAL_PROMPT(code, language);
+  let prompt: string;
+  if (originalScore !== undefined) {
+    prompt = IMPROVE_PROMPT(code, language, originalScore);
+  } else {
+    prompt = sarcasmMode
+      ? SARCASM_PROMPT(code, language)
+      : NORMAL_PROMPT(code, language);
+  }
 
   const result = await generateText({
     model: groq("llama-3.3-70b-versatile"),
