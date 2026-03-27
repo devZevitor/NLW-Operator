@@ -52,6 +52,25 @@ export async function LeaderboardEntry({
           <div className="flex items-center gap-3 font-mono text-xs">
             <span className="text-zinc-500">{language}</span>
             <span className="text-zinc-600">{lines} lines</span>
+            <Link
+              href={`/roast/${id}/fix`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-transparent px-3 py-1.5 font-mono text-xs text-zinc-400 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
+            >
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+              corrigir
+            </Link>
           </div>
         </div>
 
