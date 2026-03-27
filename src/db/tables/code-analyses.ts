@@ -21,6 +21,17 @@ export const cruelPhraseEnum = pgEnum("cruel_phrase", [
   "DECENT",
 ]);
 
+export interface Issue {
+  severity: "critical" | "warning" | "info";
+  title: string;
+  description: string;
+}
+
+export interface Highlight {
+  title: string;
+  description: string;
+}
+
 export const codeAnalyses = pgTable("code_analyses", {
   id: uuid("id").defaultRandom().primaryKey(),
   roastId: uuid("roast_id")
@@ -31,6 +42,8 @@ export const codeAnalyses = pgTable("code_analyses", {
   loc: integer("loc").notNull(), // Lines of Code
   shameScore: integer("shame_score").notNull(), // 0-10
   cruelPhrase: cruelPhraseEnum("cruel_phrase").notNull(),
+  issues: text("issues").$type<Issue[]>(), // JSON array of issues
+  highlights: text("highlights").$type<Highlight[]>(), // JSON array of highlights
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -14,6 +14,11 @@ interface CodeBlockProps {
    * @default true
    */
   window?: boolean;
+  /**
+   * If true, shows line numbers on the left side.
+   * @default true
+   */
+  showLineNumbers?: boolean;
 }
 
 export async function CodeBlock({
@@ -23,6 +28,7 @@ export async function CodeBlock({
   headerRight,
   headerLeft,
   window = true,
+  showLineNumbers = true,
 }: CodeBlockProps) {
   const html = await codeToHtml(code, {
     lang,
@@ -30,16 +36,28 @@ export async function CodeBlock({
     structure: "inline",
   });
 
+  const lines = code.split("\n");
+  const lineNumbers = Array.from({ length: lines.length }, (_, i) => i + 1);
+
   const content = (
     <div
       className={cn(
-        "relative overflow-x-auto p-4 text-sm",
+        "relative flex min-w-full p-4 text-sm",
         !window && className,
       )}
     >
+      {showLineNumbers && (
+        <div className="select-none pr-4 text-right text-zinc-600">
+          {lineNumbers.map((num) => (
+            <div key={num} className="leading-relaxed font-mono">
+              {num}
+            </div>
+          ))}
+        </div>
+      )}
       <div
         dangerouslySetInnerHTML={{ __html: html }}
-        className="font-mono leading-relaxed whitespace-pre"
+        className="flex-1 font-mono leading-relaxed whitespace-pre"
       />
     </div>
   );
