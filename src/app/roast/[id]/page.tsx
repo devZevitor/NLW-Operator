@@ -42,6 +42,36 @@ function getSeverityLabel(severity: string) {
   }
 }
 
+export async function generateMetadata({ params }: RoastPageProps) {
+  const { id } = await params;
+
+  let roast;
+  try {
+    roast = await api.roast.getById({ id });
+  } catch {
+    return {
+      title: "Roast Not Found | DevRoast",
+    };
+  }
+
+  if (!roast) {
+    return {
+      title: "Roast Not Found | DevRoast",
+    };
+  }
+
+  return {
+    title: `Score: ${roast.analysis.shameScore}/10 | DevRoast`,
+    description: roast.analysis.sarcasticPhrase,
+    openGraph: {
+      images: [`/roast/${id}/opengraph`],
+    },
+    twitter: {
+      card: "summary_large_image",
+    },
+  };
+}
+
 export default async function RoastPage({ params }: RoastPageProps) {
   const { id } = await params;
 
