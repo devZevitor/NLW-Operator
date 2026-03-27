@@ -4,6 +4,7 @@ import { codeToHtml } from "shiki";
 import { Badge } from "@/components/ui/badge";
 import { CodeBlock } from "@/components/ui/code-block";
 import { ScoreRing } from "@/components/ui/score-ring";
+import { ShareButton } from "@/components/ui/share-button";
 import { api, HydrateClient } from "@/trpc/server";
 
 interface RoastPageProps {
@@ -116,13 +117,16 @@ export default async function RoastPage({ params }: RoastPageProps) {
               <ScoreRing score={analysis.shameScore} />
             </div>
             <div className="flex flex-1 flex-col gap-6 text-center lg:text-left">
-              <div className="flex items-center justify-center gap-4 lg:justify-start">
+              <div className="flex flex-wrap items-center justify-center gap-4 lg:justify-start">
                 <Badge variant="destructive" dot className="px-3 py-1 text-sm">
                   verdict: {analysis.cruelPhrase.toLowerCase()}
                 </Badge>
                 <Badge className="px-3 py-1 text-sm bg-zinc-800 text-zinc-300">
                   rank: #{rank}
                 </Badge>
+                <ShareButton
+                  url={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/roast/${id}`}
+                />
               </div>
               <h1 className="font-mono text-3xl font-medium leading-tight text-zinc-50 md:text-4xl lg:text-5xl">
                 "{analysis.sarcasticPhrase}"
