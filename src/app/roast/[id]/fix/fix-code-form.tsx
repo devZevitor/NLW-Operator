@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 
@@ -19,6 +19,7 @@ export function FixCodeForm({
   originalScore,
 }: FixCodeFormProps) {
   const [code, setCode] = useState(originalCode);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     improved: boolean;
     newScore: number;
@@ -40,12 +41,25 @@ export function FixCodeForm({
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
+    const trimmedCode = code.trim();
+
+    if (!trimmedCode) {
+      setError("O código não pode estar vazio.");
+      return;
+    }
+
+    if (trimmedCode === originalCode.trim()) {
+      setError("O código precisa ser diferente do original!");
+      return;
+    }
+
+    setError(null);
     improveMutation.mutate({
       roastId,
-      improvedCode: code,
+      improvedCode: trimmedCode,
     });
-  };
+  }, [code, originalCode, improveMutation, roastId]);
 
   return (
     <div className="space-y-6">
@@ -71,7 +85,14 @@ export function FixCodeForm({
         {improveMutation.isPending ? "Analisando..." : "Analisar Melhoria"}
       </Button>
 
-      {/* Error */}
+      {/* Validation Error */}
+      {error && (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-amber-400">
+          {error}
+        </div>
+      )}
+
+      {/* API Error */}
       {improveMutation.error && (
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-400">
           {improveMutation.error.message}
