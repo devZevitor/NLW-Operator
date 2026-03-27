@@ -102,6 +102,33 @@ ${code}
 Responda APENAS com JSON válido, sem markdown.
 `;
 
+const _IMPROVE_PROMPT = (
+  code: string,
+  language: string,
+  originalScore: number,
+) => `
+Linguagem: ${language}
+Score original: ${originalScore}/10
+
+Este código é uma TENTATIVA DE MELHORIA de código que foiroasteado.
+Analise esta tentativa e retorne OBRIGATORIAMENTE:
+- "issues": problemas na versão melhorada
+- "highlights": apenas se realmente melhorou muito
+- "improvedCode": versão final (pode ser o código enviado ou uma correção adicional)
+- "sarcasticPhrase": feedback (mais sarcástico se não melhorar)
+- "shameScore": 0-10
+
+Se o código enviado realmente melhorar o score, seja mais gentil.
+Se piorar ou não melhorar, seja MUITO mais sarcástico.
+
+Código melhorado:
+\`\`\`
+${code}
+\`\`\`
+
+Responda APENAS com JSON válido.
+`;
+
 export async function analyzeCode(
   input: AnalyzeCodeInput,
 ): Promise<GroqResponse> {

@@ -21,6 +21,7 @@ Permitir que usuários enviem trechos de código para análise da IA (Gemini), r
 ### 3. Tratamento de Erros
 - Exibir erro na interface em caso de falha na API
 - Permitir retry sem perder o código digitado
+- bloquear temporariament caso 3 erros seguidos (30min de block)
 
 ## Arquitetura
 

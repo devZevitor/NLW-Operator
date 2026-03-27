@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { codeAnalyses, type Highlight, type Issue, roasts } from "@/db/schema";
 import { db } from "@/lib/db";
@@ -117,6 +117,58 @@ export const roastRouter = createTRPCRouter({
           highlights: parseJsonField(roast.analysis.highlights) as Highlight[],
         },
         rank: rankResult?.rank ?? 1,
+      };
+    }),
+
+  improve: publicProcedure
+    .input(
+      z.object({
+        roastId: z.string().uuid(),
+        improvedCode: z.string().min(1).max(10000),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { roastId, improvedCode } = input;
+
+      const roast = await db.query.roasts.findFirst({
+        where: (roasts, { eq }) => eq(roasts.id, roastId),
+        with: { analysis: true },
+      });
+
+      if (!roast || !roast.analysis) {
+        throw new Error("Roast not found");
+      }
+
+      const originalScore = roast.analysis.shameScore;
+
+      const analysis = await analyzeCode({
+        code: improvedCode,
+        language: roast.language,
+        sarcasmMode: true,
+      });
+
+      const improved = analysis.shameScore > originalScore;
+
+      await db
+        .update(codeAnalyses)
+        .set({
+          improvedCode: analysis.improvedCode,
+          sarcasticPhrase: improved
+            ? `Melhorou! ${analysis.sarcasticPhrase}`
+            : analysis.sarcasticPhrase,
+          shameScore: analysis.shameScore,
+          cruelPhrase: getCruelPhrase(analysis.shameScore),
+          issues: JSON.stringify(analysis.issues),
+          highlights: JSON.stringify(analysis.highlights),
+        })
+        .where(eq(codeAnalyses.roastId, roastId));
+
+      return {
+        improved,
+        newScore: analysis.shameScore,
+        sarcasticPhrase: improved
+          ? `Melhorou! ${analysis.sarcasticPhrase}`
+          : analysis.sarcasticPhrase,
       };
     }),
 });
