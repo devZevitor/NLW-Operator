@@ -1,4 +1,5 @@
 import { diffLines } from "diff";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { codeToHtml } from "shiki";
 import { Badge } from "@/components/ui/badge";
@@ -127,6 +128,26 @@ export default async function RoastPage({ params }: RoastPageProps) {
                 <ShareButton
                   url={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/roast/${id}`}
                 />
+                <Link
+                  href={`/roast/${id}/fix`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-transparent px-3 py-1.5 font-mono text-xs text-zinc-400 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                  corrigir
+                </Link>
               </div>
               <h1 className="font-mono text-3xl font-medium leading-tight text-zinc-50 md:text-4xl lg:text-5xl">
                 "{analysis.sarcasticPhrase}"
