@@ -52,22 +52,42 @@ const RESPONSE_SCHEMA = z.object({
   shameScore: z.number().min(0).max(10),
 });
 
+const CRITERIOS_BOM_CODIGO = `
+Um BOM código deve ter:
+1. SINTAXE CORRETA - sem erros de sintaxe, parêntesesbalanceados, etc
+2. PERFORMANCE - sem loops infinitos, sem busy-waiting, sem operações desnecessárias
+3. BOAS PRÁTICAS - nomenclatura clara, código limpo, DRY quando apropriado
+4. USO CORRETO DA LINGUAGEM - APIs nativas corretas, sem misturar linguagens
+5. CUMPRE O OBJETIVO - faz o que se propõe sem bugs lógicos
+
+O "improvedCode" DEVE ser uma versão que:
+- Preserve a intenção original do código
+- Corrija apenas os problemas identificados nos issues
+- NÃO adicione código inexistente (como funções ou loops que não existiam)
+- NÃO quebre código que estava funcionando
+- seja executável e não contenha erros de sintaxe
+`;
+
 const NORMAL_PROMPT = (code: string, language: string) => `
 A linguagem informada é uma detecção automática e pode estar incorreta. 
 Analise o código e, se parecer ser de outra linguagem, ignore a linguagem informada e analise como a linguagem real.
 
 Linguagem informada: ${language}
 
+${CRITERIOS_BOM_CODIGO}
+
 Analise este código e retorne um JSON com OBRIGATORIAMENTE:
 - "issues": array de PROBLEMAS/PONTOS DE MELHORIA (mínimo 1 item, pode ser severity "info" se não houver problemas críticos) com severity (critical/warning/info), title, description
 - "highlights": array de pontos positivos (apenas se o código realmente for bom, com pouquissimos erros E pontos muito positivos - pode ser array vazio se não houver)
-- "improvedCode": versão MELHORADA/CORRIGIDA do código (NUNCA pode estar vazio - retorne o código original corrigido se não souber melhorar)
+- "improvedCode": versão MELHORADA/CORRIGIDA do código seguindo os critérios acima
 - "sarcasticPhrase": frase de feedback (tom neutro-técnico)
 - "shameScore": inteiro 0-10 indicando nível de "vergonha" do código
 
 IMPORTANTE: 
 - issues DEVE ter pelo menos 1 item - se o código for bom, use severity "info"
 - improvedCode NUNCA pode estar vazio - retorne o código com correções mesmo que mínimo
+- O código melhorado NÃO deve quebrar a funcionalidade original
+- NÃO invente código que não existe no original
 
 Código:
 \`\`\`
@@ -83,17 +103,20 @@ Analise o código e, se parecer ser de outra linguagem, ignore a linguagem infor
 
 Linguagem informada: ${language}
 
+${CRITERIOS_BOM_CODIGO}
+
 Este código é terrível e você é um desenvolvedor sênior sarcástico que não tem medo de ferir sentimentos. 
 Analise e retorne OBRIGATORIAMENTE:
 - "issues": array de problemas (mínimo 1 item) com descrições sarcásticas
 - "highlights": pontos positivos APENAS se pouquissimos erros E pontos muito positivos
-- "improvedCode": versão corrigida do código (NUNCA vazio)
+- "improvedCode": versão corrigida do código seguindo os critérios acima (NUNCA vazio)
 - "sarcasticPhrase": frase mega sarcástica
 - "shameScore": 0-10 (seja harsher no score)
 
 IMPORTANTE:
 - issues DEVE ter pelo menos 1 item
 - improvedCode NUNCA pode estar vazio
+- NÃO invente código que não existe no original
 
 Código:
 \`\`\`
@@ -111,16 +134,23 @@ const IMPROVE_PROMPT = (
 Linguagem: ${language}
 Score original: ${originalScore}/10
 
+${CRITERIOS_BOM_CODIGO}
+
 Este código é uma TENTATIVA DE MELHORIA de código que foiroasteado.
 Analise esta tentativa e retorne OBRIGATORIAMENTE:
-- "issues": problemas na versão melhorada
-- "highlights": apenas se realmente melhorou muito
-- "improvedCode": versão final (pode ser o código enviado ou uma correção adicional)
+- "issues": array de problemas na versão melhorada (mínimo 1 item) com severity (critical/warning/info), title e description
+- "highlights": array de pontos positivos (apenas se realmente melhorou muito)
+- "improvedCode": versão final seguindo os critérios acima (pode ser o código enviado se estiver bom, ou uma correção adicional mínima)
 - "sarcasticPhrase": feedback (mais sarcástico se não melhorar)
 - "shameScore": 0-10
 
-Se o código enviado realmente melhorar o score, seja mais gentil.
-Se piorar ou não melhorar, seja MUITO mais sarcástico.
+IMPORTANTE:
+- issues DEVE ter severity, title e description
+- Se o código enviado já for bom e não adicionar bugs, use severity "info" ou "warning" apenas
+- Se o código PIORAR (adicionar loops infinitos, quebrar sintaxe, etc), seja MUITO mais sarcástico
+- improvedCode: se o código enviado estiver bom, retorne-o sem mudanças. Apenas faça correções mínimas se houver problemas críticos
+- NÃO adicione código inexistente no original (não invente funções, loops, etc)
+- NÃO quebre código que estava funcionando
 
 Código melhorado:
 \`\`\`
