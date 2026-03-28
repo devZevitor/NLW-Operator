@@ -40,6 +40,7 @@ export default async function LeaderboardPage() {
           leaderboard.map((entry) => (
             <LeaderboardEntry
               key={entry.id}
+              id={entry.id}
               rank={entry.rank}
               score={entry.shameScore}
               code={entry.originalCode}

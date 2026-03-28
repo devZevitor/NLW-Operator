@@ -1,8 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { CodeContainer } from "@/components/ui/code-container";
-import { highlightCode } from "@/lib/code";
 import { cn } from "@/lib/utils";
 
-interface CodeBlockProps {
+interface EditableCodeBlockProps {
   code?: string;
   lang?: string;
   className?: string;
@@ -10,9 +12,11 @@ interface CodeBlockProps {
   headerLeft?: React.ReactNode;
   window?: boolean;
   showLineNumbers?: boolean;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
-export async function CodeBlock({
+export function EditableCodeBlock({
   code = "",
   lang = "typescript",
   className,
@@ -20,10 +24,20 @@ export async function CodeBlock({
   headerLeft,
   window = true,
   showLineNumbers = true,
-}: CodeBlockProps) {
-  const html = await highlightCode(code, lang);
+  value,
+  onChange,
+}: EditableCodeBlockProps) {
+  const [internalCode, setInternalCode] = useState(code);
 
-  const lines = code.split("\n");
+  const currentValue = value ?? internalCode;
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setInternalCode(newValue);
+    onChange?.(newValue);
+  };
+
+  const lines = currentValue.split("\n");
   const lineNumbers = Array.from(
     { length: Math.max(lines.length, 1) },
     (_, i) => i + 1,
@@ -45,9 +59,11 @@ export async function CodeBlock({
           ))}
         </div>
       )}
-      <div
-        dangerouslySetInnerHTML={{ __html: html }}
-        className="flex-1 font-mono leading-relaxed whitespace-pre"
+      <textarea
+        value={currentValue}
+        onChange={handleChange}
+        className="flex-1 font-mono leading-relaxed whitespace-pre bg-transparent resize-none focus:outline-none"
+        spellCheck={false}
       />
     </div>
   );

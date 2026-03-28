@@ -1,10 +1,12 @@
-import { AlertTriangle, Info, Share2, XCircle } from "lucide-react";
+import { diffLines } from "diff";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { codeToHtml } from "shiki";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DiffLine } from "@/components/ui/diff";
+import { CodeBlock } from "@/components/ui/code-block";
 import { ScoreRing } from "@/components/ui/score-ring";
+import { ShareButton } from "@/components/ui/share-button";
+import { api, HydrateClient } from "@/trpc/server";
 
 interface RoastPageProps {
   params: Promise<{
@@ -12,211 +14,299 @@ interface RoastPageProps {
   }>;
 }
 
-// Mock data based on the design
-const MOCK_ROAST = {
-  id: "123e4567-e89b-12d3-a456-426614174000",
-  score: 3.5,
-  verdict: "needs_serious_help",
-  title:
-    "this code looks like it was written during a power outage... in 2005.",
-  language: "javascript",
-  lines: 7,
-  submittedCode: `function calculateTotal(items) {
-  var total = 0;
-  for (var i = 0; i < items.length; i++) {
-    total = total + items[i].price;
+function cleanCode(code: string): string {
+  return code
+    .split("\n")
+    .filter((line) => line.trim() !== "" || line === "")
+    .map((line) => (line.trim() === "" && line !== "" ? "" : line))
+    .join("\n");
+}
+
+function getSeverityColor(severity: string) {
+  switch (severity) {
+    case "critical":
+      return "bg-red-500/10 border-red-500/20 text-red-400";
+    case "warning":
+      return "bg-amber-500/10 border-amber-500/20 text-amber-400";
+    default:
+      return "bg-blue-500/10 border-blue-500/20 text-blue-400";
   }
-  return total;
-}`,
-  issues: [
-    {
-      id: 1,
-      severity: "critical",
-      title: "Use of var",
-      description:
-        "var is function-scoped and can lead to hoisting issues. Use let or const instead.",
+}
+
+function getSeverityLabel(severity: string) {
+  switch (severity) {
+    case "critical":
+      return "critical";
+    case "warning":
+      return "warning";
+    default:
+      return "info";
+  }
+}
+
+export async function generateMetadata({ params }: RoastPageProps) {
+  const { id } = await params;
+
+  let roast;
+  try {
+    roast = await api.roast.getById({ id });
+  } catch {
+    return {
+      title: "Roast Not Found | DevRoast",
+    };
+  }
+
+  if (!roast) {
+    return {
+      title: "Roast Not Found | DevRoast",
+    };
+  }
+
+  return {
+    title: `Score: ${roast.analysis.shameScore}/10 | DevRoast`,
+    description: roast.analysis.sarcasticPhrase,
+    openGraph: {
+      images: [`/roast/${id}/opengraph`],
     },
-    {
-      id: 2,
-      severity: "warning",
-      title: "Loop Optimization",
-      description:
-        "Consider using reduce() for array summation instead of a for loop.",
+    twitter: {
+      card: "summary_large_image",
     },
-    {
-      id: 3,
-      severity: "info",
-      title: "Type Safety",
-      description: "No type checking on items or price. Consider TypeScript.",
-    },
-    {
-      id: 4,
-      severity: "critical",
-      title: "Magic Strings/Numbers",
-      description:
-        "Avoid hardcoding values if applicable (not seen here but good practice).",
-    },
-  ],
-  diff: [
-    {
-      type: "context",
-      content: "function calculateTotal(items) {",
-      lineNumber: 1,
-    },
-    { type: "removed", content: "  var total = 0;", lineNumber: 2 },
-    {
-      type: "removed",
-      content: "  for (var i = 0; i < items.length; i++) {",
-      lineNumber: 3,
-    },
-    {
-      type: "removed",
-      content: "    total = total + items[i].price;",
-      lineNumber: 4,
-    },
-    { type: "removed", content: "  }", lineNumber: 5 },
-    {
-      type: "added",
-      content: "  return items.reduce((acc, item) => acc + item.price, 0);",
-      lineNumber: 2,
-    },
-    { type: "context", content: "}", lineNumber: 6 }, // Adjusted line number for context
-  ],
-} as const;
+  };
+}
 
 export default async function RoastPage({ params }: RoastPageProps) {
-  // In a real app, we would fetch the roast by params.id
   const { id } = await params;
-  const roast = MOCK_ROAST;
+
+  let roast: Awaited<ReturnType<typeof api.roast.getById>> | undefined;
+  try {
+    roast = await api.roast.getById({ id });
+  } catch {
+    notFound();
+  }
+
+  const { originalCode, language, createdAt, analysis, rank } = roast;
+
+  const cleanedOriginal = cleanCode(originalCode);
+  const cleanedImproved = cleanCode(analysis.improvedCode);
+  const diff = diffLines(cleanedOriginal, cleanedImproved);
+
+  const diffHtml = await Promise.all(
+    diff.map(async (part) => {
+      const html = await codeToHtml(part.value, {
+        lang: language,
+        theme: "vesper",
+        structure: "inline",
+      });
+      return { ...part, html };
+    }),
+  );
+
+  const totalRoasts = await api.metrics.getStats();
+  const totalCount = totalRoasts.totalRoasts ?? 0;
+  const percentile = Math.round(((rank - 1) / Math.max(totalCount, 1)) * 100);
+
+  const issues = analysis.issues ?? [];
+  const highlights = analysis.highlights ?? [];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-20">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        {/* Score Hero */}
-        <div className="mb-16 flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
-          <div className="flex justify-center lg:justify-start">
-            <ScoreRing score={roast.score} />
-          </div>
-          <div className="flex flex-1 flex-col gap-6 text-center lg:text-left">
-            <div className="flex items-center justify-center gap-4 lg:justify-start">
-              <Badge variant="destructive" dot className="px-3 py-1 text-sm">
-                verdict: {roast.verdict}
-              </Badge>
+    <HydrateClient>
+      <div className="min-h-screen bg-[#0A0A0A] pb-20">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          {/* Score Hero */}
+          <div className="mb-16 flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
+            <div className="flex justify-center lg:justify-start">
+              <ScoreRing score={analysis.shameScore} />
             </div>
-            <h1 className="font-mono text-3xl font-medium leading-tight text-zinc-50 md:text-4xl lg:text-5xl">
-              "{roast.title}"
-            </h1>
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-zinc-400 lg:justify-start">
-              <span className="font-mono">lang: {roast.language}</span>
-              <span>·</span>
-              <span className="font-mono">{roast.lines} lines</span>
-              <div className="hidden lg:block h-1 w-1 rounded-full bg-zinc-700" />
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-              >
-                <Share2 className="h-4 w-4" />
-                Share Roast
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-12">
-          {/* Submitted Code Section */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 font-mono text-sm">
-              <span className="font-bold text-emerald-500">//</span>
-              <span className="font-bold text-zinc-50">your_submission</span>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[#111111]">
-              <div className="flex overflow-x-auto p-4">
-                <div className="flex flex-col select-none border-r border-zinc-800 pr-4 text-right font-mono text-sm text-zinc-600">
-                  {roast.submittedCode.split("\n").map((_, i) => (
-                    <span key={i} className="leading-6">
-                      {i + 1}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex flex-col pl-4 font-mono text-sm text-zinc-300">
-                  <pre className="m-0">
-                    {roast.submittedCode.split("\n").map((line, i) => (
-                      <div key={i} className="leading-6 whitespace-pre">
-                        {line}
-                      </div>
-                    ))}
-                  </pre>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <div className="h-px w-full bg-zinc-800" />
-
-          {/* Analysis Section */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-2 font-mono text-sm">
-              <span className="font-bold text-emerald-500">//</span>
-              <span className="font-bold text-zinc-50">detailed_analysis</span>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2">
-              {roast.issues.map((issue) => (
-                <Card
-                  key={issue.id}
-                  className="border-zinc-800 bg-[#111111] transition-colors hover:border-zinc-700"
+            <div className="flex flex-1 flex-col gap-6 text-center lg:text-left">
+              <div className="flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+                <Badge variant="destructive" dot className="px-3 py-1 text-sm">
+                  verdict: {analysis.cruelPhrase.toLowerCase()}
+                </Badge>
+                <Badge className="px-3 py-1 text-sm bg-zinc-800 text-zinc-300">
+                  rank: #{rank}
+                </Badge>
+                <ShareButton
+                  url={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/roast/${id}`}
+                />
+                <Link
+                  href={`/roast/${id}/fix`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-transparent px-3 py-1.5 font-mono text-xs text-zinc-400 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
                 >
-                  <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-2">
-                    {issue.severity === "critical" ? (
-                      <XCircle className="mt-1 h-5 w-5 shrink-0 text-red-500" />
-                    ) : issue.severity === "warning" ? (
-                      <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-amber-500" />
-                    ) : (
-                      <Info className="mt-1 h-5 w-5 shrink-0 text-blue-500" />
-                    )}
-                    <div className="space-y-1">
-                      <CardTitle className="text-base font-medium text-zinc-50">
-                        {issue.title}
-                      </CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-zinc-400">{issue.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          <div className="h-px w-full bg-zinc-800" />
-
-          {/* Diff Section */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-2 font-mono text-sm">
-              <span className="font-bold text-emerald-500">//</span>
-              <span className="font-bold text-zinc-50">suggested_fix</span>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[#111111]">
-              <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-2">
-                <span className="font-mono text-xs text-zinc-400">
-                  your_code.ts → improved_code.ts
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                  corrigir
+                </Link>
+              </div>
+              <h1 className="font-mono text-3xl font-medium leading-tight text-zinc-50 md:text-4xl lg:text-5xl">
+                "{analysis.sarcasticPhrase}"
+              </h1>
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-zinc-400 lg:justify-start">
+                <span className="font-mono">lang: {language}</span>
+                <span>·</span>
+                <span className="font-mono">{analysis.loc} lines</span>
+                <span>·</span>
+                <span className="font-mono text-emerald-400">
+                  top {percentile}%
+                </span>
+                <div className="hidden lg:block h-1 w-1 rounded-full bg-zinc-700" />
+                <span className="font-mono text-zinc-500">
+                  {createdAt.toLocaleDateString()}
                 </span>
               </div>
-              <div className="py-2">
-                {roast.diff.map((line, i) => (
-                  <DiffLine
-                    key={i}
-                    type={line.type as "added" | "removed" | "context"}
-                    lineNumber={line.lineNumber}
-                  >
-                    {line.content}
-                  </DiffLine>
-                ))}
-              </div>
             </div>
-          </section>
+          </div>
+
+          <div className="space-y-12">
+            {/* Submitted Code Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 font-mono text-sm">
+                <span className="font-bold text-emerald-500">{/* */}</span>
+                <span className="font-bold text-zinc-50">your_submission</span>
+              </div>
+              <CodeBlock
+                code={cleanedOriginal}
+                lang={language}
+                className="w-full max-h-[400px]"
+              />
+            </section>
+
+            <div className="h-px w-full bg-zinc-800" />
+
+            {/* Detailed Analysis Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 font-mono text-sm">
+                <span className="font-bold text-emerald-500">{/* */}</span>
+                <span className="font-bold text-zinc-50">
+                  detailed_analysis
+                </span>
+              </div>
+              {issues.length === 0 && highlights.length === 0 ? (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-8 text-center">
+                  <p className="font-mono text-sm text-zinc-500">
+                    código não apresentou problemas significativos
+                  </p>
+                </div>
+              ) : (
+                <div className="flex w-full flex-col gap-6">
+                  {issues.length > 0 && (
+                    <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                      {issues.map((issue, idx) => (
+                        <div
+                          key={`${issue.title}-${idx}`}
+                          className={`w-full rounded-lg border p-4 ${getSeverityColor(issue.severity)}`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-mono font-bold uppercase">
+                              {getSeverityLabel(issue.severity)}
+                            </span>
+                          </div>
+                          <h3 className="font-mono font-medium text-sm mb-1">
+                            {issue.title}
+                          </h3>
+                          <p className="text-xs text-zinc-400">
+                            {issue.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {highlights.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2 font-mono text-sm">
+                        <span className="font-bold text-emerald-500">
+                          {/* */}
+                        </span>
+                        <span className="font-bold text-zinc-50">
+                          pontos_positivos
+                        </span>
+                      </div>
+                      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                        {highlights.map((highlight, idx) => (
+                          <div
+                            key={`${highlight.title}-${idx}`}
+                            className="w-full rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4"
+                          >
+                            <h3 className="font-mono font-medium text-sm mb-1 text-emerald-400">
+                              {highlight.title}
+                            </h3>
+                            <p className="text-xs text-zinc-400">
+                              {highlight.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </section>
+
+            <div className="h-px w-full bg-zinc-800" />
+
+            {/* Suggested Fix Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 font-mono text-sm">
+                <span className="font-bold text-emerald-500">{/* */}</span>
+                <span className="font-bold text-zinc-50">suggested_fix</span>
+              </div>
+              <div className="w-full overflow-hidden rounded-xl border border-zinc-800 bg-[#111111]">
+                <div className="flex flex-col font-mono text-sm p-4">
+                  {diffHtml.map((part, idx) => {
+                    const htmlLines = part.html.split("\n");
+                    const valueLines = part.value.split("\n");
+                    return htmlLines.map((htmlLine, lineIdx) => {
+                      const originalLine = valueLines[lineIdx];
+                      if (
+                        !originalLine ||
+                        (originalLine.trim() === "" && originalLine !== "")
+                      ) {
+                        return null;
+                      }
+                      return (
+                        <div
+                          key={`${idx}-${lineIdx}`}
+                          className={`leading-6 ${
+                            part.added
+                              ? "bg-emerald-500/10"
+                              : part.removed
+                                ? "bg-red-500/10 opacity-60"
+                                : ""
+                          }`}
+                        >
+                          <span
+                            className={`whitespace-pre ${
+                              part.added
+                                ? "text-emerald-400"
+                                : part.removed
+                                  ? "text-red-400"
+                                  : "text-zinc-300"
+                            }`}
+                            dangerouslySetInnerHTML={{
+                              __html: htmlLine || "&nbsp;",
+                            }}
+                          />
+                        </div>
+                      );
+                    });
+                  })}
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
-    </div>
+    </HydrateClient>
   );
 }

@@ -1,4 +1,7 @@
 // Export Enums
+
+// Export Types
+export type { Highlight, Issue } from "./tables/code-analyses";
 export {
   codeAnalyses,
   codeAnalysesRelations,
